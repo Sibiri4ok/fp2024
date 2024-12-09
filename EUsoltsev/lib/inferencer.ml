@@ -1,3 +1,9 @@
+(** Copyright 2024-2025, Danil Usoltsev *)
+
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
+(* Template: https://gitlab.com/Kakadu/fp2020course-materials/-/tree/master/code/miniml?ref_type=heads*)
+
 open Typing
 
 module R : sig
