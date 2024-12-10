@@ -148,7 +148,7 @@ end = struct
             let* subs' = unify (apply subs t1) (apply subs t2) in
             let* composed_subs = compose subs subs' in
             unify_tuples composed_subs rest1 rest2
-          | _, _ -> failwith "This should not happen"
+          | _, _ -> failwith "This will never happen"
         in
         unify_tuples empty ts1 ts2)
     | TyList t1, TyList t2 -> unify t1 t2
@@ -250,7 +250,7 @@ let infer_binop_type = function
 
 let pattern_to_string = function
   | PatVariable name -> name
-  | _ -> failwith "Unsupported pattern: only variables are supported in the environment"
+  | _ -> failwith "Unsupported pattern"
 ;;
 
 let infer_expr =
@@ -300,7 +300,7 @@ let infer_expr =
       let* sub3, t3 =
         match e3 with
         | Some expr -> helper env expr
-        | None -> failwith "Expected an expression but got None"
+        | None -> failwith "Expected expression"
       in
       let* sub_cond = Subst.unify t1 (TyPrim "bool") in
       let* sub_t = Subst.unify t2 t3 in
