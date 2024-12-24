@@ -5,18 +5,30 @@
 open EUsoltsev_lib
 open Inferencer
 open Typing
+open Parser
+open Printf
+open Ast
+
+let parse_test input =
+  match parse input with
+  | Ok ast -> printf "%s\n" (show_program ast)
+  | Error fail -> printf "Ошибка: %s\n" fail
+;;
 
 let pretty_printer_infer e =
   match run_inference e with
-  | Ok ty -> Stdlib.Format.printf "%a" pp_ty ty
-  | Error err -> Stdlib.Format.printf "%a" pp_error err
-;;
+  | Ok ty -> Stdlib.Format.printf "%a\n" pp_ty ty
+  | Error err -> Stdlib.Format.printf "%a\n" pp_error err
 
 let pretty_printer_parse_and_infer input =
-  match Parser.parse_string_expr input with
-  | Ok e -> pretty_printer_infer e
+  match Parser.parse input with
+  | Ok expressions ->
+      List.iter (fun e -> pretty_printer_infer e) expressions
   | Error _ -> Stdlib.print_endline "Failed to parse"
-;;
+
+let() = parse_test "let sum x y = x + y;; let x = sum 10 20"
+
+let() = pretty_printer_parse_and_infer "let z = 5 + 10;; let x =  10 + 5"
 
 let%expect_test "test_binary_oper" =
   pretty_printer_parse_and_infer "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
@@ -98,3 +110,9 @@ let%expect_test "test_unification_types" =
   pretty_printer_parse_and_infer "fun x -> x + true";
   [%expect {|Error: Failed to unify types: bool and int.|}]
 ;;
+
+(* let%expect_test "test_unification_types" =
+  pretty_printer_parse_and_infer "let sum x y = x + y;; let x = sum 10 20";
+  [%expect {|Error: Failed to unify types: bool and int.|}]
+;; *)
+
