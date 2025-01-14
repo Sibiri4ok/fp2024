@@ -159,7 +159,7 @@ end = struct
             let* subs' = unify (apply subs t1) (apply subs t2) in
             let* composed_subs = compose subs subs' in
             unify_tuples composed_subs rest1 rest2
-          | _, _ -> failwith "This should not happen"
+          | _, _ -> failwith "This will never happen"
         in
         unify_tuples empty ts1 ts2)
     | TyList t1, TyList t2 -> unify t1 t2
@@ -279,9 +279,20 @@ let rec infer_pattern env = function
 
 let infer_binop_type = function
   | Equal | NotEqual | GreaterThan | GretestEqual | LowerThan | LowestEqual ->
+<<<<<<< HEAD
     fresh_var >>| fun fv -> fv, fv, TyPrim "bool"
   | Plus | Minus | Multiply | Division -> return (TyPrim "int", TyPrim "int", TyPrim "int")
   | And | Or -> return (TyPrim "bool", TyPrim "bool", TyPrim "bool")
+=======
+    fresh_var >>| fun fv -> fv, TyPrim "bool"
+  | Plus | Minus | Multiply | Division -> return (TyPrim "int", TyPrim "int")
+  | And | Or -> return (TyPrim "bool", TyPrim "bool")
+;;
+
+let pattern_to_string = function
+  | PatVariable name -> name
+  | _ -> failwith "Unsupported pattern"
+>>>>>>> ce7465e4de63237c010bfcb99a69b198c6c9bec1
 ;;
 
 let infer_expr =
@@ -306,9 +317,15 @@ let infer_expr =
       let* sub1, t1 = helper env i in
       let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
       let* sub3, t3 =
+<<<<<<< HEAD
         match e with
         | Some e -> helper (TypeEnv.apply sub2 env) e
         | None -> return (Subst.empty, TyPrim "unit")
+=======
+        match e3 with
+        | Some expr -> helper env expr
+        | None -> failwith "Expected expression"
+>>>>>>> ce7465e4de63237c010bfcb99a69b198c6c9bec1
       in
       let* sub4 = Subst.unify t1 (TyPrim "bool") in
       let* sub5 = Subst.unify t2 t3 in
