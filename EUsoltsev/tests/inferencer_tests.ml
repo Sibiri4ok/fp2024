@@ -108,12 +108,15 @@ let%expect_test "test_annotate" =
 ;;
 
 let%expect_test "test_annotate_fac" =
-  pretty_printer_parse_and_infer "let rec fac (n : int) (acc : int) = if n < 2 then acc else fac (n-1) (acc * n);;";
+  pretty_printer_parse_and_infer
+    "let rec fac (n : int) (acc : int) = if n < 2 then acc else fac (n-1) (acc * n);;";
   [%expect {|int -> int -> int|}]
 ;;
 
 let%expect_test "test_program_1" =
-  pretty_printer_parse_and_infer "let div = fun x y -> x / y;; let sum = fun x y -> x + y;; let res = fun x y z ->  div x (sum y z)";
+  pretty_printer_parse_and_infer
+    "let div = fun x y -> x / y;; let sum = fun x y -> x + y;; let res = fun x y z ->  \
+     div x (sum y z)";
   [%expect {|
     a -> b -> int
     e -> f -> g -> int
@@ -121,8 +124,9 @@ let%expect_test "test_program_1" =
 ;;
 
 let%expect_test "test_program_2" =
-  pretty_printer_parse_and_infer "let square = fun x -> x * x
-                                  let result = square 10";
+  pretty_printer_parse_and_infer
+    "let square = fun x -> x * x\n\
+    \                                  let result = square 10";
   [%expect {|
     int
     a -> int|}]
@@ -139,8 +143,8 @@ let%expect_test "test_unification_types" =
 ;;
 
 (*  PASSED let%expect_test "test_unification_types" =
-  pretty_printer_parse_and_infer "let temp =
-                                  let f = fun x -> x in
-                                  (f 1, f true)";
-  [%expect {|Infer error. Failed to unify types: bool and int.|}]
-;; *)
+    pretty_printer_parse_and_infer "let temp =
+    let f = fun x -> x in
+    (f 1, f true)";
+    [%expect {|Infer error. Failed to unify types: bool and int.|}]
+    ;; *)

@@ -159,7 +159,7 @@ end = struct
             let* subs' = unify (apply subs t1) (apply subs t2) in
             let* composed_subs = compose subs subs' in
             unify_tuples composed_subs rest1 rest2
-          | _, _ -> failwith "This will never happen"
+          | _, _ -> failwith "This should not happen"
         in
         unify_tuples empty ts1 ts2)
     | TyList t1, TyList t2 -> unify t1 t2
@@ -269,7 +269,6 @@ let rec infer_pattern env = function
         (p1 :: p2 :: pl)
     in
     return (env, TyTuple (List.rev tl))
-
   | PatType (pat, an) ->
     let* env1, t1 = infer_pattern env pat in
     let* sub = Subst.unify t1 an in
@@ -279,57 +278,39 @@ let rec infer_pattern env = function
 
 let infer_binop_type = function
   | Equal | NotEqual | GreaterThan | GretestEqual | LowerThan | LowestEqual ->
-<<<<<<< HEAD
     fresh_var >>| fun fv -> fv, fv, TyPrim "bool"
   | Plus | Minus | Multiply | Division -> return (TyPrim "int", TyPrim "int", TyPrim "int")
   | And | Or -> return (TyPrim "bool", TyPrim "bool", TyPrim "bool")
-=======
-    fresh_var >>| fun fv -> fv, TyPrim "bool"
-  | Plus | Minus | Multiply | Division -> return (TyPrim "int", TyPrim "int")
-  | And | Or -> return (TyPrim "bool", TyPrim "bool")
-;;
-
-let pattern_to_string = function
-  | PatVariable name -> name
-  | _ -> failwith "Unsupported pattern"
->>>>>>> ce7465e4de63237c010bfcb99a69b198c6c9bec1
 ;;
 
 let infer_expr =
   let rec helper env = function
-    | ExpConst c ->
-      return (Subst.empty, infer_const c)
+    | ExpConst c -> return (Subst.empty, infer_const c)
     | ExpIdent x ->
       (match TypeEnv.find x env with
-      | Some s ->
-        let* t = instantiate s in
-        return (Subst.empty, t)
-      | None -> fail (NoVariable x))
+       | Some s ->
+         let* t = instantiate s in
+         return (Subst.empty, t)
+       | None -> fail (NoVariable x))
     | ExpBinOper (op, e1, e2) ->
       let* sub1, t1 = helper env e1 in
       let* sub2, t2 = helper (TypeEnv.apply sub1 env) e2 in
       let* e1t, e2t, et = infer_binop_type op in
       let* sub3 = Subst.unify (Subst.apply sub2 t1) e1t in
       let* sub4 = Subst.unify (Subst.apply sub3 t2) e2t in
-      let* sub = Subst.compose_all [sub1; sub2; sub3; sub4] in
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4 ] in
       return (sub, Subst.apply sub et)
     | ExpBranch (i, t, e) ->
       let* sub1, t1 = helper env i in
       let* sub2, t2 = helper (TypeEnv.apply sub1 env) t in
       let* sub3, t3 =
-<<<<<<< HEAD
         match e with
         | Some e -> helper (TypeEnv.apply sub2 env) e
         | None -> return (Subst.empty, TyPrim "unit")
-=======
-        match e3 with
-        | Some expr -> helper env expr
-        | None -> failwith "Expected expression"
->>>>>>> ce7465e4de63237c010bfcb99a69b198c6c9bec1
       in
       let* sub4 = Subst.unify t1 (TyPrim "bool") in
       let* sub5 = Subst.unify t2 t3 in
-      let* sub = Subst.compose_all [sub1; sub2; sub3; sub4; sub5] in
+      let* sub = Subst.compose_all [ sub1; sub2; sub3; sub4; sub5 ] in
       return (sub, Subst.apply sub t2)
     | ExpTuple (e1, e2, el) ->
       let* sub, t =
@@ -356,7 +337,7 @@ let infer_expr =
                let* sub_acc, ty_acc = acc in
                let* sub_cur, ty_cur = helper env expr in
                let* sub_unify = Subst.unify ty_acc ty_cur in
-               let* sub_combined = Subst.compose_all [sub_acc; sub_cur; sub_unify] in
+               let* sub_combined = Subst.compose_all [ sub_acc; sub_cur; sub_unify ] in
                return (sub_combined, Subst.apply sub_combined ty_acc))
              ~init:(return (sub1, ty_hd))
              tl
@@ -375,7 +356,7 @@ let infer_expr =
       let* s1, t1 = helper env e1 in
       let* s2, t2 = helper (TypeEnv.apply s1 env) e2 in
       let* s3 = Subst.unify (TyArrow (t2, fresh)) (Subst.apply s2 t1) in
-      let* sub = Subst.compose_all [s1; s2; s3] in
+      let* sub = Subst.compose_all [ s1; s2; s3 ] in
       let t = Subst.apply sub fresh in
       return (sub, t)
     | ExpLet (false, PatVariable x, e1, e2_opt) ->
@@ -412,7 +393,14 @@ let infer_expr =
       let* s1, t1 = helper env e1 in
       let env = TypeEnv.apply s1 env in
       let s = generalize env t1 in
-      let env = TypeEnv.extend env (match pat with PatVariable x -> x | _ -> "_") s in
+      let env =
+        TypeEnv.extend
+          env
+          (match pat with
+           | PatVariable x -> x
+           | _ -> "_")
+          s
+      in
       (match e2_opt with
        | None -> return (s1, t1)
        | Some e2 ->
@@ -432,21 +420,18 @@ let infer_expr =
       in
       let param_types = List.rev param_types in
       let* sub_body, body_type = helper env' body in
-      let* sub = Subst.compose_all [sub_patterns; sub_body] in
+      let* sub = Subst.compose_all [ sub_patterns; sub_body ] in
       let tarrow l r = TyArrow (l, r) in
-      let function_type =
-        List.fold_right param_types ~init:body_type ~f:tarrow
-      in
+      let function_type = List.fold_right param_types ~init:body_type ~f:tarrow in
       return (sub, function_type)
     | _ -> fail NotImplemented
   in
   helper
-
-
 ;;
 
 let rec infer_structure_item env = function
-  | ExpLet (true, PatVariable x1, e1, None) -> (* Рекурсивное объявление *)
+  | ExpLet (true, PatVariable x1, e1, None) ->
+    (* Рекурсивное объявление *)
     let* fresh = fresh_var in
     let sc = Scheme.S (VarSet.empty, fresh) in
     let env = TypeEnv.extend env x1 sc in
@@ -458,47 +443,56 @@ let rec infer_structure_item env = function
     let sc = generalize_rec env t2 x1 in
     let env = TypeEnv.extend env x1 sc in
     return env
-  | ExpLet (false, PatVariable x1, e1, None) -> (* Нерекурсивное объявление *)
+  | ExpLet (false, PatVariable x1, e1, None) ->
+    (* Нерекурсивное объявление *)
     let* s, t = infer_expr env e1 in
     let env = TypeEnv.apply s env in
     let sc = generalize env t in
     let env = TypeEnv.extend env x1 sc in
     return env
-  | ExpLet (is_rec, PatType (pat, an), e1, e2_opt) -> (* Объявление с аннотированным типом *)
+  | ExpLet (is_rec, PatType (pat, an), e1, e2_opt) ->
+    (* Объявление с аннотированным типом *)
     let* env1, t1 = infer_pattern env pat in
     let* sub = Subst.unify t1 an in
     let env = TypeEnv.apply sub env1 in
     let* s1, t1 = infer_expr env e1 in
     let env = TypeEnv.apply s1 env in
     let s = generalize env t1 in
-    let env = TypeEnv.extend env (match pat with PatVariable x -> x | _ -> "_") s in
+    let env =
+      TypeEnv.extend
+        env
+        (match pat with
+         | PatVariable x -> x
+         | _ -> "_")
+        s
+    in
     (match e2_opt with
      | None -> return env
      | Some e2 ->
        let* s2, t2 = infer_expr env e2 in
        let* s = Subst.compose s1 s2 in
        return (TypeEnv.apply s env))
-  | ExpLet (is_rec, PatVariable x1, e1, Some body) -> (* Объявление с телом *)
+  | ExpLet (is_rec, PatVariable x1, e1, Some body) ->
+    (* Объявление с телом *)
     let* env = infer_structure_item env (ExpLet (is_rec, PatVariable x1, e1, None)) in
     infer_expr env body >>= fun _ -> return env
-  | expr -> (* Обработка остальных выражений *)
+  | expr ->
+    (* Обработка остальных выражений *)
     let* s, t = infer_expr env expr in
     return (TypeEnv.extend env "_" (Scheme.S (VarSet.empty, t)))
 ;;
-
-
 
 let infer_structure (structure : program) =
   let rec process_items env items =
     match items with
     | [] -> return env
-    | ExpLet (is_rec, pattern, expr, None) :: rest -> 
+    | ExpLet (is_rec, pattern, expr, None) :: rest ->
       let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, None)) in
       process_items env rest
-    | ExpLet (is_rec, pattern, expr, Some body) :: rest -> 
+    | ExpLet (is_rec, pattern, expr, Some body) :: rest ->
       let* env = infer_structure_item env (ExpLet (is_rec, pattern, expr, Some body)) in
       process_items env rest
-    | expr :: rest -> 
+    | expr :: rest ->
       let* env = infer_structure_item env expr in
       process_items env rest
   in
