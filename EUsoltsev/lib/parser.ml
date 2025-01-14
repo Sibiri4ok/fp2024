@@ -5,6 +5,7 @@
 open Ast
 open Base
 open Angstrom
+open Typing
 
 let is_keyword = function
   | "let" | "match" | "in" | "if" | "then" | "else" | "fun" | "rec" | "true" | "false" ->
@@ -33,7 +34,7 @@ let token1 s = white_space *> s
 let parse_parens p = token "(" *> p <* token ")"
 
 let parse_const_int =
-  let sign = choice [ token "+"; token "-"; token "" ] in
+  let sign = choice [token "" ] in
   let num = take_while1 Char.is_digit in
   lift2 (fun s n -> ConstInt (Int.of_string (s ^ n))) sign num
 ;;
@@ -63,6 +64,35 @@ let parse_ident =
   >>= fun s -> if is_keyword s then fail "It is not identifier" else return s
 ;;
 
+let parse_base_type =
+  choice
+    [
+      token "int" *> return (TyPrim "int");
+      token "bool" *> return (TyPrim "bool");
+      token "string" *> return (TyPrim "string");
+      token "unit" *> return (TyPrim "unit");
+    ]
+;;
+
+let rec parse_type_list t =
+  let* base = t in
+  white_space *> token "list"
+  *> (parse_type_list (return (TyList base)) <|> return (TyList base))
+;;
+
+let parse_type =
+  let base_type = parse_base_type in
+  let list_type = parse_type_list base_type <|> base_type in
+  list_type
+;;
+
+let parse_pattern_with_type parse_pattern =
+  let* pat = white_space *> token "(" *> parse_pattern in
+  let* constr = white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")" in
+  return (PatType (pat, constr))
+;;
+
+
 let parse_pattern_var = parse_ident >>| fun id -> PatVariable id
 let parse_pattern_const = parse_const >>| fun c -> PatConst c
 let parse_pattern_any = token "_" *> return PatAny
@@ -83,6 +113,7 @@ let parse_pattern =
         ; parse_pattern_var
         ; parse_pattern_const
         ; parse_pattern_tuple pat
+        ; parse_pattern_with_type pat
         ]
     in
     pat)
@@ -94,7 +125,7 @@ let parse_left_associative expr oper =
 ;;
 
 let parse_expr_bin_oper parse_bin_op tkn =
-  white_space *> token tkn *> return (fun e1 e2 -> ExpBinOper (parse_bin_op, e1, e2))
+  token tkn *> return (fun e1 e2 -> ExpBinOper (parse_bin_op, e1, e2))
 ;;
 
 let multiply = parse_expr_bin_oper Multiply "*"
@@ -184,7 +215,7 @@ let parse_expr =
   fix (fun expr ->
     let expr =
       choice
-        [ parse_expr_option expr; parse_expr_ident; parse_expr_const; parse_parens expr ]
+        [ parse_expr_option expr; parse_expr_ident; parse_expr_const; parse_parens expr]
     in
     let expr = parse_expr_function expr <|> expr in
     let expr = parse_left_associative expr (multiply <|> division) in
@@ -211,6 +242,3 @@ let parse_program =
 
 let parse input = parse_string ~consume:All parse_program input
 
-let parse_string_expr =
-  parse_string ~consume:Consume.All (parse_expr <* skip_while Char.is_whitespace)
-;;

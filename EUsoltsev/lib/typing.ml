@@ -1,26 +1,39 @@
 open Format
+open Ast
 
-type binder = int [@@deriving show { with_path = false }]
-
-module VarSet = Stdlib.Set.Make (Int)
+(* type binder = int [@@deriving show { with_path = false }]
 
 type ty =
   | TyVar of binder
   | TyPrim of string
   | TyArrow of ty * ty
-  | TyTuple of ty list
   | TyList of ty
+  | TyTuple of ty list
   | TyOption of ty
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }] *)
 
-type scheme = Scheme of VarSet.t * ty
 
-type error =
+(* type error =
   | OccursCheck of int * ty
   | NoVariable of string
   | UnificationFailed of ty * ty
   | SeveralBounds of string
   | NotImplemented
+
+let pp_error fmt = function
+  | OccursCheck (id, ty) ->
+    fprintf
+      fmt
+      "Error: Occurs check failed. Type variable '%d occurs inside %a."
+      id
+      pp_ty
+      ty
+  | NoVariable name -> fprintf fmt "Error: Unbound variable '%s'." name
+  | UnificationFailed (ty1, ty2) ->
+    fprintf fmt "Error: Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
+  | SeveralBounds name -> fprintf fmt "Error: Multiple bounds for variable '%s'." name
+  | NotImplemented -> fprintf fmt "Error: This feature is not implemented yet."
+;;
 
 let rec pp_ty fmt = function
   | TyPrim x -> fprintf fmt "%s" x
@@ -43,19 +56,4 @@ let rec pp_ty fmt = function
     (match ty with
      | TyArrow _ | TyTuple _ -> fprintf fmt "(%a) option" pp_ty ty
      | _ -> fprintf fmt "%a option" pp_ty ty)
-;;
-
-let pp_error fmt = function
-  | OccursCheck (id, ty) ->
-    fprintf
-      fmt
-      "Error: Occurs check failed. Type variable '%d occurs inside %a."
-      id
-      pp_ty
-      ty
-  | NoVariable name -> fprintf fmt "Error: Unbound variable '%s'." name
-  | UnificationFailed (ty1, ty2) ->
-    fprintf fmt "Error: Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
-  | SeveralBounds name -> fprintf fmt "Error: Multiple bounds for variable '%s'." name
-  | NotImplemented -> fprintf fmt "Error: This feature is not implemented yet."
-;;
+;; *)

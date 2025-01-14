@@ -12,23 +12,19 @@ open Ast
 let parse_test input =
   match parse input with
   | Ok ast -> printf "%s\n" (show_program ast)
-  | Error fail -> printf "Ошибка: %s\n" fail
+  | Error fail -> printf "%s\n" fail
 ;;
 
-let pretty_printer_infer e =
-  match run_inference e with
-  | Ok ty -> Stdlib.Format.printf "%a\n" pp_ty ty
-  | Error err -> Stdlib.Format.printf "%a\n" pp_error err
-
-let pretty_printer_parse_and_infer input =
-  match Parser.parse input with
-  | Ok expressions ->
-      List.iter (fun e -> pretty_printer_infer e) expressions
-  | Error _ -> Stdlib.print_endline "Failed to parse"
-
-let() = parse_test "let sum x y = x + y;; let x = sum 10 20"
-
-let() = pretty_printer_parse_and_infer "let z = 5 + 10;; let x =  10 + 5"
+let pretty_printer_parse_and_infer s =
+  match Parser.parse s with
+  | Ok parsed ->
+    (match run_infer parsed with
+     | Ok env ->
+       Base.Map.iteri env ~f:(fun ~key:_ ~data:(S (_, ty)) ->
+         Format.printf "%a\n" pp_ty ty)
+     | Error e -> Format.printf "Infer error. %a\n" pp_error e)
+  | Error e -> Format.printf "Parsing error. %s\n" e
+;;
 
 let%expect_test "test_binary_oper" =
   pretty_printer_parse_and_infer "10/2 + 56*2 - 10 / 10 / 20 + 666 - 777 + 1";
@@ -67,7 +63,7 @@ let%expect_test "test_rec" =
 
 let%expect_test "test_func_apply_some_args" =
   pretty_printer_parse_and_infer "let func a1 a2 a3 = a1 a2 a3";
-  [%expect {|a -> b -> c -> e|}]
+  [%expect {|a -> b -> c -> d|}]
 ;;
 
 let%expect_test "test_tuple" =
@@ -103,16 +99,48 @@ let%expect_test "test_fibonacci" =
 
 let%expect_test "test_unbound_var" =
   pretty_printer_parse_and_infer "let f = x";
-  [%expect {|Error: Unbound variable 'x'.|}]
+  [%expect {|Infer error. Unbound variable 'x'.|}]
+;;
+
+let%expect_test "test_annotate" =
+  pretty_printer_parse_and_infer "let sum (x : int) (y : int) = x + y";
+  [%expect {|int -> int -> int|}]
+;;
+
+let%expect_test "test_annotate_fac" =
+  pretty_printer_parse_and_infer "let rec fac (n : int) (acc : int) = if n < 2 then acc else fac (n-1) (acc * n);;";
+  [%expect {|int -> int -> int|}]
+;;
+
+let%expect_test "test_program_1" =
+  pretty_printer_parse_and_infer "let div = fun x y -> x / y;; let sum = fun x y -> x + y;; let res = fun x y z ->  div x (sum y z)";
+  [%expect {|
+    a -> b -> int
+    e -> f -> g -> int
+    c -> d -> int|}]
+;;
+
+let%expect_test "test_program_2" =
+  pretty_printer_parse_and_infer "let square = fun x -> x * x
+                                  let result = square 10";
+  [%expect {|
+    int
+    a -> int|}]
+;;
+
+let%expect_test "test_annotate_error" =
+  pretty_printer_parse_and_infer "let sum (x : int) (y : string) = x + y";
+  [%expect {|Infer error. Failed to unify types: string and int.|}]
 ;;
 
 let%expect_test "test_unification_types" =
   pretty_printer_parse_and_infer "fun x -> x + true";
-  [%expect {|Error: Failed to unify types: bool and int.|}]
+  [%expect {|Infer error. Failed to unify types: bool and int.|}]
 ;;
 
-(* let%expect_test "test_unification_types" =
-  pretty_printer_parse_and_infer "let sum x y = x + y;; let x = sum 10 20";
-  [%expect {|Error: Failed to unify types: bool and int.|}]
+(*  PASSED let%expect_test "test_unification_types" =
+  pretty_printer_parse_and_infer "let temp =
+                                  let f = fun x -> x in
+                                  (f 1, f true)";
+  [%expect {|Infer error. Failed to unify types: bool and int.|}]
 ;; *)
-
