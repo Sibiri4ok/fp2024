@@ -4,7 +4,7 @@
 
 open Ast
 open Base
-open Format
+open Stdlib.Format
 
 type env = (ident, value, String.comparator_witness) Map.t
 
@@ -120,7 +120,7 @@ end = struct
            (ValueBuiltin
               (function
                 | ValueBool b ->
-                  Stdlib.print_string (string_of_bool b);
+                  Stdlib.print_string (Bool.to_string b);
                   Stdlib.print_newline ();
                   Result.return ValueUnit
                 | _ -> Result.fail (TypeError (ValueBool false))))

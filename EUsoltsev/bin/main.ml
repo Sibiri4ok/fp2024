@@ -17,12 +17,13 @@ let run_inference input =
      | Ok env ->
        let filtered_env =
          Base.Map.filter_keys env ~f:(fun key ->
-           not (List.mem key ["print_int"; "print_endline"; "print_bool"]))
+           not (List.mem key [ "print_int"; "print_endline"; "print_bool" ]))
        in
        Base.Map.iteri filtered_env ~f:(fun ~key:_ ~data:(S (_, ty)) ->
          Format.printf "%a\n" pp_ty ty)
      | Error e -> Format.printf "Infer error. %a\n" pp_error e)
   | Error e -> Format.printf "Parsing error. %s\n" e
+;;
 
 (** Функция для запуска интерпретации *)
 let run_interpreter s =
@@ -41,6 +42,7 @@ let read_file filename =
   let content = really_input_string channel (in_channel_length channel) in
   close_in channel;
   content
+;;
 
 (** Основная функция для обработки флагов и входных данных *)
 let main () =
@@ -48,30 +50,24 @@ let main () =
   let infer_flag = ref false in
   let interpret_flag = ref false in
   let file_flag = ref "" in
-
-  let args = [
-    ("-infer", Arg.Set infer_flag, "Run type inference");
-    ("-interpret", Arg.Set interpret_flag, "Run interpretation");
-    ("-file", Arg.Set_string file_flag, "Specify the file to process");
-  ] in
-
-  let anon_fun s = input := s in
-
-  Arg.parse args anon_fun "Usage: program [-infer | -interpret] [-file <filename>] <input>";
-
-  let input_content =
-    if !file_flag <> "" then
-      read_file !file_flag
-    else
-      !input
+  let args =
+    [ "-infer", Arg.Set infer_flag, "Run type inference"
+    ; "-interpret", Arg.Set interpret_flag, "Run interpretation"
+    ; "-file", Arg.Set_string file_flag, "Specify the file to process"
+    ]
   in
-
-  if !infer_flag then
-    run_inference input_content
-  else if !interpret_flag then
-    run_interpreter input_content
-  else
-    printf "Please specify either -infer or -interpret flag.\n"
+  let anon_fun s = input := s in
+  Arg.parse
+    args
+    anon_fun
+    "Usage: program [-infer | -interpret] [-file <filename>] <input>";
+  let input_content = if !file_flag <> "" then read_file !file_flag else !input in
+  if !infer_flag
+  then run_inference input_content
+  else if !interpret_flag
+  then run_interpreter input_content
+  else printf "Please specify either -infer or -interpret flag.\n"
+;;
 
 (** Запуск программы *)
 let () = main ()
