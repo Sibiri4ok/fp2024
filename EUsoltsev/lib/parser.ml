@@ -5,7 +5,6 @@
 open Ast
 open Base
 open Angstrom
-open Typing
 
 let is_keyword = function
   | "let" | "match" | "in" | "if" | "then" | "else" | "fun" | "rec" | "true" | "false" ->
@@ -105,15 +104,18 @@ let parse_pattern_tuple parse_pattern =
   | [] -> fail "Empty tuple pattern not allowed"
 ;;
 
+let parse_pattern_empty = token "()" *> return PatUnit
+
 let parse_pattern =
   fix (fun pat ->
     let pat =
       choice
-        [ parse_pattern_any
-        ; parse_pattern_var
+        [ parse_pattern_var
+        ; parse_pattern_any
         ; parse_pattern_const
         ; parse_pattern_tuple pat
         ; parse_pattern_with_type pat
+        ; parse_pattern_empty
         ]
     in
     pat)
@@ -188,6 +190,12 @@ let parse_expr_lambda parse_expr =
   >>= fun params -> parse_expr >>| fun body -> ExpLambda (params, body)
 ;;
 
+let parse_expr_with_type parse_expr =
+  let* expr = white_space *> token "(" *> parse_expr in
+  let* constr = white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")" in
+  return (ExpTypeAnnotation (expr, constr))
+;;
+
 let parse_expr_let parse_expr =
   let parse_lambda_params () = sep_by1 white_space parse_pattern in
   let parse_body parse_expr =
@@ -213,22 +221,52 @@ let parse_expr_tuple expr =
 
 let parse_expr =
   fix (fun expr ->
-    let expr =
+    (* Базовые выражения: переменные, константы, списки, скобки *)
+    let term =
       choice
-        [ parse_expr_option expr; parse_expr_ident; parse_expr_const; parse_parens expr]
+        [ parse_expr_ident; (* Переменные *)
+          parse_expr_const; (* Константы *)
+          parse_expr_list expr; (* Списки *)
+          parse_parens expr; (* Выражения в скобках *)
+          parse_expr_with_type expr 
+        ]
     in
-    let expr = parse_expr_function expr <|> expr in
-    let expr = parse_left_associative expr (multiply <|> division) in
-    let expr = parse_left_associative expr (plus <|> minus) in
-    let expr = parse_left_associative expr compare in
-    let expr = parse_left_associative expr (and_op <|> or_op) in
-    let expr = parse_expr_unar_oper expr <|> expr in
-    let expr = parse_expr_branch expr <|> expr in
-    let expr = parse_expr_tuple expr <|> expr in
-    let expr = parse_expr_list expr <|> expr in
-    let expr = parse_expr_lambda expr <|> expr in
-    let expr = parse_expr_let expr <|> expr in
-    expr)
+
+    (* Применение функции (например, f x) *)
+    let apply = parse_expr_function term in
+
+    (* Конструкторы (например, Some x) *)
+    let cons = parse_expr_option apply <|> apply in
+
+    (* Условные выражения (if-then-else) *)
+    let ife = parse_expr_branch expr <|> cons in
+
+    (* Унарные операции (например, -x, not x) *)
+    let unops = parse_expr_unar_oper ife <|> ife in
+
+    (* Бинарные операции: умножение и деление *)
+    let ops1 = parse_left_associative unops (multiply <|> division) in
+
+    (* Бинарные операции: сложение и вычитание *)
+    let ops2 = parse_left_associative ops1 (plus <|> minus) in
+
+    (* Операции сравнения (например, x > y, x = y) *)
+    let cmp = parse_left_associative ops2 compare in
+
+    let boolean = parse_left_associative cmp (and_op <|> or_op) in 
+
+    (* Кортежи (например, (x, y, z)) *)
+    let tuple = parse_expr_tuple boolean <|> boolean in
+
+    (* Лямбда-выражения (например, fun x -> x + 1) *)
+    let lambda = parse_expr_lambda expr <|> tuple in
+
+    (* Все возможные выражения: let, match, функции и т.д. *)
+    choice
+      [ parse_expr_let expr; (* let-выражения *)
+        parse_expr_lambda expr; (* Лямбды *)
+        lambda (* Все остальное *)
+      ])
 ;;
 
 let parse_program =

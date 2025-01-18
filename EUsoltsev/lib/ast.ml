@@ -50,6 +50,7 @@ type pattern =
   | PatTuple of pattern * pattern * pattern list (* (x1; x2 ... xn) *)
   | PatAny
   | PatType of pattern * ty
+  | PatUnit
 [@@deriving show { with_path = false }]
 
 type expr =
@@ -62,6 +63,7 @@ type expr =
   | ExpTuple of expr * expr * expr list (* ExpTuple[x1; x2 .. xn] *)
   | ExpList of expr list (* ExpList[x1; x2 .. xn] *)
   | ExpLambda of pattern list * expr (* ExpLambda([x;y;z], x+y+z)*)
+  | ExpTypeAnnotation of expr * ty
   | ExpOption of expr option
   | ExpFunction of expr * expr (* ExpFunction(x, y)*)
   | ExpMatch of expr * (pattern * expr) list

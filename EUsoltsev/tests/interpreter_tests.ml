@@ -3,11 +3,6 @@
 (** SPDX-License-Identifier: LGPL-3.0-or-later *)
 
 open EUsoltsev_lib
-open Inferencer
-open Typing
-open Parser
-open Printf
-open Ast
 open Interpreter
 
 let test_interpret s =
@@ -15,9 +10,14 @@ let test_interpret s =
   match Parser.parse s with
   | Ok parsed ->
     (match Inter.eval_structure parsed with
-     | Ok _ -> () (* Не выводим значения переменных *)
+     | Ok _ -> ()
      | Error e -> printf "Interpreter error: %a\n" pp_value_error e)
   | Error e -> printf "Parsing error: %s\n" e
+;;
+
+let%expect_test "test_unit" =
+  test_interpret "let () = print_int(10 / 10 + 2 * 50 + 89 - 89)";
+  [%expect {|101|}]
 ;;
 
 let%expect_test "test_base_operation1" =
@@ -101,6 +101,14 @@ let%expect_test "test_annotate_fac" =
     "let rec fac (n : int) (acc : int) = if n < 2 then acc else fac (n-1) (acc * n)\n\
     \                  let res = print_int (fac 5 1)";
   [%expect {|120|}]
+;;
+
+let%expect_test "test_tuple" =
+  test_interpret
+    "let (a,b) = (1 + 1 * 10,2 - 1 * 5);; let () = print_int a ;; let () = print_int b";
+  [%expect {|
+    11
+    -3|}]
 ;;
 
 let%expect_test "test_div_error" =
