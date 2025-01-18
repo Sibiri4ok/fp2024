@@ -1,6 +1,7 @@
 (** Copyright 2024-2025, Danil Usoltsev *)
 
-(** SPDX-License-Identifier: LGPL-3.0-or-later *)  
+(** SPDX-License-Identifier: LGPL-3.0-or-later *)
+
   $ ../bin/main.exe -infer -file manytests/typed/001fac.ml
   int -> int
   int
@@ -13,7 +14,7 @@
   int -> int
   int -> int -> int -> int
   int
-  
+
   $ ../bin/main.exe -infer -file manytests/typed/004manyargs.ml
   int
   i -> j -> k -> l -> m -> n -> o -> p -> q -> r -> int
@@ -28,7 +29,7 @@
   $ ../bin/main.exe -infer -file manytests/typed/006partial.ml
   d -> int
   int
-  
+
   $ ../bin/main.exe -infer -file manytests/typed/006partial2.ml
   a -> b -> c -> int
   int

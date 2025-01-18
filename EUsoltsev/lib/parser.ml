@@ -33,7 +33,7 @@ let token1 s = white_space *> s
 let parse_parens p = token "(" *> p <* token ")"
 
 let parse_const_int =
-  let sign = choice [token "" ] in
+  let sign = choice [ token "" ] in
   let num = take_while1 Char.is_digit in
   lift2 (fun s n -> ConstInt (Int.of_string (s ^ n))) sign num
 ;;
@@ -65,17 +65,17 @@ let parse_ident =
 
 let parse_base_type =
   choice
-    [
-      token "int" *> return (TyPrim "int");
-      token "bool" *> return (TyPrim "bool");
-      token "string" *> return (TyPrim "string");
-      token "unit" *> return (TyPrim "unit");
+    [ token "int" *> return (TyPrim "int")
+    ; token "bool" *> return (TyPrim "bool")
+    ; token "string" *> return (TyPrim "string")
+    ; token "unit" *> return (TyPrim "unit")
     ]
 ;;
 
 let rec parse_type_list t =
   let* base = t in
-  white_space *> token "list"
+  white_space
+  *> token "list"
   *> (parse_type_list (return (TyList base)) <|> return (TyList base))
 ;;
 
@@ -87,10 +87,11 @@ let parse_type =
 
 let parse_pattern_with_type parse_pattern =
   let* pat = white_space *> token "(" *> parse_pattern in
-  let* constr = white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")" in
+  let* constr =
+    white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")"
+  in
   return (PatType (pat, constr))
 ;;
-
 
 let parse_pattern_var = parse_ident >>| fun id -> PatVariable id
 let parse_pattern_const = parse_const >>| fun c -> PatConst c
@@ -192,7 +193,9 @@ let parse_expr_lambda parse_expr =
 
 let parse_expr_with_type parse_expr =
   let* expr = white_space *> token "(" *> parse_expr in
-  let* constr = white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")" in
+  let* constr =
+    white_space *> token ":" *> white_space *> parse_type <* white_space <* token ")"
+  in
   return (ExpTypeAnnotation (expr, constr))
 ;;
 
@@ -224,47 +227,42 @@ let parse_expr =
     (* Базовые выражения: переменные, константы, списки, скобки *)
     let term =
       choice
-        [ parse_expr_ident; (* Переменные *)
-          parse_expr_const; (* Константы *)
-          parse_expr_list expr; (* Списки *)
-          parse_parens expr; (* Выражения в скобках *)
-          parse_expr_with_type expr 
+        [ parse_expr_ident
+        ; (* Переменные *)
+          parse_expr_const
+        ; (* Константы *)
+          parse_expr_list expr
+        ; (* Списки *)
+          parse_parens expr
+        ; (* Выражения в скобках *)
+          parse_expr_with_type expr
         ]
     in
-
     (* Применение функции (например, f x) *)
     let apply = parse_expr_function term in
-
     (* Конструкторы (например, Some x) *)
     let cons = parse_expr_option apply <|> apply in
-
     (* Условные выражения (if-then-else) *)
     let ife = parse_expr_branch expr <|> cons in
-
     (* Унарные операции (например, -x, not x) *)
     let unops = parse_expr_unar_oper ife <|> ife in
-
     (* Бинарные операции: умножение и деление *)
     let ops1 = parse_left_associative unops (multiply <|> division) in
-
     (* Бинарные операции: сложение и вычитание *)
     let ops2 = parse_left_associative ops1 (plus <|> minus) in
-
     (* Операции сравнения (например, x > y, x = y) *)
     let cmp = parse_left_associative ops2 compare in
-
-    let boolean = parse_left_associative cmp (and_op <|> or_op) in 
-
+    let boolean = parse_left_associative cmp (and_op <|> or_op) in
     (* Кортежи (например, (x, y, z)) *)
     let tuple = parse_expr_tuple boolean <|> boolean in
-
     (* Лямбда-выражения (например, fun x -> x + 1) *)
     let lambda = parse_expr_lambda expr <|> tuple in
-
     (* Все возможные выражения: let, match, функции и т.д. *)
     choice
-      [ parse_expr_let expr; (* let-выражения *)
-        parse_expr_lambda expr; (* Лямбды *)
+      [ parse_expr_let expr
+      ; (* let-выражения *)
+        parse_expr_lambda expr
+      ; (* Лямбды *)
         lambda (* Все остальное *)
       ])
 ;;
@@ -279,4 +277,3 @@ let parse_program =
 ;;
 
 let parse input = parse_string ~consume:All parse_program input
-

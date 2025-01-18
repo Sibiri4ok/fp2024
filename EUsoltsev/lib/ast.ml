@@ -30,7 +30,7 @@ type const =
   | ConstInt of int (* Integer constant: Example - [21] *)
   | ConstBool of bool (* Boolean constant: Example - [true] or [false] *)
   | ConstString of string (* String constant: Example - "I like OCaml!" *)
-  | ConstUnit 
+  | ConstUnit
 [@@deriving show { with_path = false }]
 
 type binder = int [@@deriving show { with_path = false }]
@@ -74,14 +74,12 @@ type expr =
 
 type program = expr list [@@deriving show { with_path = false }]
 
-
 type error =
   | OccursCheck of int * ty
   | NoVariable of string
   | UnificationFailed of ty * ty
   | SeveralBounds of string
   | NotImplemented
-
 
 let rec pp_ty fmt = function
   | TyPrim x -> fprintf fmt "%s" x
@@ -108,16 +106,10 @@ let rec pp_ty fmt = function
 
 let pp_error fmt = function
   | OccursCheck (id, ty) ->
-    fprintf
-      fmt
-      "Occurs check failed. Type variable '%d occurs inside %a."
-      id
-      pp_ty
-      ty
+    fprintf fmt "Occurs check failed. Type variable '%d occurs inside %a." id pp_ty ty
   | NoVariable name -> fprintf fmt "Unbound variable '%s'." name
   | UnificationFailed (ty1, ty2) ->
     fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
   | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
   | NotImplemented -> fprintf fmt "This feature is not implemented yet."
 ;;
-

@@ -14,11 +14,6 @@ let parse_test input =
 ;;
 
 let%expect_test "factorial" =
-  parse_test "let recfac n = if n<=1 then 1 else n * fac (n-1)";
-  [%expect {||}]
-;;
-
-let%expect_test "factorial" =
   parse_test "let rec factorial n = if n < 2 then 1 else n * factorial(n - 1);;";
   [%expect
     {|

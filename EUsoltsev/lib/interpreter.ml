@@ -181,7 +181,8 @@ end = struct
       let* v = find env x in
       let v =
         match v with
-        | ValueClosure (p, true, e, closure_env) -> ValueClosure (p, true, e, extend closure_env x v)
+        | ValueClosure (p, true, e, closure_env) ->
+          ValueClosure (p, true, e, extend closure_env x v)
         | _ -> v
       in
       return v
@@ -219,7 +220,12 @@ end = struct
              match v with
              | ValueClosure (p, _, e, _) ->
                let updated_closure = ValueClosure (p, true, e, env1) in
-               extend env1 (match p with PatVariable x -> x | _ -> "_") updated_closure
+               extend
+                 env1
+                 (match p with
+                  | PatVariable x -> x
+                  | _ -> "_")
+                 updated_closure
              | _ -> env1)
            else env1
          in
@@ -295,8 +301,7 @@ end = struct
           ValueClosure (p, false, ExpLambda (ps, body), env)
       in
       return (create_nested_closures env patterns body)
-    | ExpTypeAnnotation (expr, _) ->
-      eval_expr env expr
+    | ExpTypeAnnotation (expr, _) -> eval_expr env expr
     | ExpFunction (e1, e2) ->
       let* v1 = eval_expr env e1 in
       let* v2 = eval_expr env e2 in
@@ -342,7 +347,12 @@ end = struct
              match v with
              | ValueClosure (p, _, e, _) ->
                let updated_closure = ValueClosure (p, true, e, env1) in
-               extend env1 (match p with PatVariable x -> x | _ -> "_") updated_closure
+               extend
+                 env1
+                 (match p with
+                  | PatVariable x -> x
+                  | _ -> "_")
+                 updated_closure
              | _ -> env1)
            else env1
          in
