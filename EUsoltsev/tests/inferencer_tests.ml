@@ -142,10 +142,3 @@ let%expect_test "test_unification_types" =
   pretty_printer_parse_and_infer "fun x -> x + true";
   [%expect {|Infer error. Failed to unify types: bool and int.|}]
 ;;
-
-(*  PASSED let%expect_test "test_unification_types" =
-    pretty_printer_parse_and_infer "let temp =
-    let f = fun x -> x in
-    (f 1, f true)";
-    [%expect {|Infer error. Failed to unify types: bool and int.|}]
-    ;; *)

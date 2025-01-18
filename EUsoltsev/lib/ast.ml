@@ -79,7 +79,7 @@ type error =
   | NoVariable of string
   | UnificationFailed of ty * ty
   | SeveralBounds of string
-  | NotImplemented
+  | NotImplement
 
 let rec pp_ty fmt = function
   | TyPrim x -> fprintf fmt "%s" x
@@ -111,5 +111,5 @@ let pp_error fmt = function
   | UnificationFailed (ty1, ty2) ->
     fprintf fmt "Failed to unify types: %a and %a." pp_ty ty1 pp_ty ty2
   | SeveralBounds name -> fprintf fmt "Multiple bounds for variable '%s'." name
-  | NotImplemented -> fprintf fmt "This feature is not implemented yet."
+  | NotImplement -> fprintf fmt "This feature is not implemented yet."
 ;;

@@ -485,7 +485,7 @@ let infer_expr =
         List.fold_right param_types ~init:body_type ~f:(fun l r -> TyArrow (l, r))
       in
       return (total_subst, function_type)
-    | _ -> fail NotImplemented
+    | _ -> fail NotImplement
   in
   helper
 ;;

@@ -9,7 +9,6 @@ open Parser
 open Printf
 open Ast
 
-(** Функция для запуска инференции типов *)
 let run_inference input =
   match parse input with
   | Ok parsed ->
@@ -25,7 +24,6 @@ let run_inference input =
   | Error e -> Format.printf "Parsing error. %s\n" e
 ;;
 
-(** Функция для запуска интерпретации *)
 let run_interpreter s =
   let open Stdlib.Format in
   match Parser.parse s with
@@ -36,7 +34,6 @@ let run_interpreter s =
   | Error e -> printf "Parsing error: %s\n" e
 ;;
 
-(** Чтение содержимого файла *)
 let read_file filename =
   let channel = open_in filename in
   let content = really_input_string channel (in_channel_length channel) in
@@ -44,7 +41,6 @@ let read_file filename =
   content
 ;;
 
-(** Основная функция для обработки флагов и входных данных *)
 let main () =
   let input = ref "" in
   let infer_flag = ref false in
@@ -69,5 +65,4 @@ let main () =
   else printf "Please specify either -infer or -interpret flag.\n"
 ;;
 
-(** Запуск программы *)
 let () = main ()
