@@ -224,46 +224,35 @@ let parse_expr_tuple expr =
 
 let parse_expr =
   fix (fun expr ->
-    (* Базовые выражения: переменные, константы, списки, скобки *)
     let term =
       choice
         [ parse_expr_ident
-        ; (* Переменные *)
+        ; 
           parse_expr_const
-        ; (* Константы *)
+        ;
           parse_expr_list expr
-        ; (* Списки *)
+        ;
           parse_parens expr
-        ; (* Выражения в скобках *)
+        ;
           parse_expr_with_type expr
         ]
     in
-    (* Применение функции (например, f x) *)
-    let apply = parse_expr_function term in
-    (* Конструкторы (например, Some x) *)
-    let cons = parse_expr_option apply <|> apply in
-    (* Условные выражения (if-then-else) *)
+    let func = parse_expr_function term in
+    let cons = parse_expr_option func <|> func in
     let ife = parse_expr_branch expr <|> cons in
-    (* Унарные операции (например, -x, not x) *)
     let unops = parse_expr_unar_oper ife <|> ife in
-    (* Бинарные операции: умножение и деление *)
     let ops1 = parse_left_associative unops (multiply <|> division) in
-    (* Бинарные операции: сложение и вычитание *)
     let ops2 = parse_left_associative ops1 (plus <|> minus) in
-    (* Операции сравнения (например, x > y, x = y) *)
     let cmp = parse_left_associative ops2 compare in
     let boolean = parse_left_associative cmp (and_op <|> or_op) in
-    (* Кортежи (например, (x, y, z)) *)
     let tuple = parse_expr_tuple boolean <|> boolean in
-    (* Лямбда-выражения (например, fun x -> x + 1) *)
     let lambda = parse_expr_lambda expr <|> tuple in
-    (* Все возможные выражения: let, match, функции и т.д. *)
     choice
       [ parse_expr_let expr
-      ; (* let-выражения *)
+      ;
         parse_expr_lambda expr
-      ; (* Лямбды *)
-        lambda (* Все остальное *)
+      ;
+        lambda 
       ])
 ;;
 
